@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Firebase Calculator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    #calculator {
+      background-color: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+      width: 300px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 18px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .buttons button, #calculateBtn, #clearAllBtn {
+      padding: 12px;
+      font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      background-color: #333;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .buttons button:hover, #calculateBtn:hover, #clearAllBtn:hover {
+      background-color: #555;
+    }
+
+    #history {
+      margin-top: 20px;
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px;
+      background: #1a1a1a;
+      width: 300px;
+    }
+
+    #history p {
+      margin: 4px 0;
+    }
+
+    #clearAllBtn {
+      margin-top: 10px;
+      background-color: #8b0000;
+    }
+  </style>
+</head>
+<body>
+  <h1>Firebase Calculator</h1>
+
+  <div id="calculator">
+    <input type="text" id="expression" placeholder="Enter expression like 5+3" />
+
+    <div class="buttons">
+      <button onclick="append('1')">1</button>
+      <button onclick="append('2')">2</button>
+      <button onclick="append('3')">3</button>
+      <button onclick="append('+')">+</button>
+
+      <button onclick="append('4')">4</button>
+      <button onclick="append('5')">5</button>
+      <button onclick="append('6')">6</button>
+      <button onclick="append('-')">-</button>
+
+      <button onclick="append('7')">7</button>
+      <button onclick="append('8')">8</button>
+      <button onclick="append('9')">9</button>
+      <button onclick="append('*')">*</button>
+
+      <button onclick="append('0')">0</button>
+      <button onclick="append('.')">.</button>
+      <button onclick="clearInput()">C</button>
+      <button onclick="append('/')">/</button>
+    </div>
+
+    <button id="calculateBtn" onclick="calculate()">=</button>
+    <button id="clearAllBtn" onclick="clearAll()">Clear All</button>
+  </div>
+
+  <div id="history">
+    <h3>History</h3>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- Firebase Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCJs226hMqX4OreNQLPU-q3aSeO4SCYorI",
+      authDomain: "basic-calcula.firebaseapp.com",
+      projectId: "basic-calcula",
+      storageBucket: "basic-calcula.appspot.com",
+      messagingSenderId: "322994414409",
+      appId: "1:322994414409:web:e6de78804ac32030023098",
+      databaseURL: "https://basic-calcula-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const calcRef = ref(database, 'calculations');
+
+    // Append value to input
+    window.append = (val) => {
+      document.getElementById('expression').value += val;
+    };
+
+    window.clearInput = () => {
+      document.getElementById('expression').value = '';
+    };
+
+    window.calculate = () => {
+      const expression = document.getElementById('expression').value;
+      try {
+        const result = eval(expression);
+        document.getElementById('expression').value = result;
+
+        // Push to Firebase
+        push(calcRef, {
+          expression: expression,
+          result: result,
+          timestamp: Date.now()
+        });
+      } catch (e) {
+        alert("Invalid Expression");
+      }
+    };
+
+    window.clearAll = async () => {
+      if (confirm("Are you sure you want to delete all history?")) {
+        await remove(calcRef);
+        document.getElementById('historyList').innerHTML = '';
+      }
+    };
+
+    // Realtime update of history
+    onValue(calcRef, (snapshot) => {
+      const historyList = document.getElementById('historyList');
+      historyList.innerHTML = '';
+      const data = snapshot.val();
+      for (let key in data) {
+        const item = data[key];
+        const line = document.createElement('p');
+        line.textContent = `${item.expression} = ${item.result}`;
+        historyList.appendChild(line);
+      }
+    });
+  </script>
+</body>
+</html>
