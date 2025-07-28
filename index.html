@@ -134,7 +134,7 @@
     const database = getDatabase(app);
     const calcRef = ref(database, 'calculations');
 
-    // Append value to input
+    
     window.append = (val) => {
       document.getElementById('expression').value += val;
     };
@@ -167,7 +167,7 @@
       }
     };
 
-    // Realtime update of history
+    
     onValue(calcRef, (snapshot) => {
       const historyList = document.getElementById('historyList');
       historyList.innerHTML = '';
